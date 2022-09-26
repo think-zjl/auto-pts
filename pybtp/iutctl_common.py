@@ -119,7 +119,15 @@ class BTPSocket(object):
         """Send BTP formated data over socket"""
         logging.debug("%s, %r %r %r %r",
                       self.send.__name__, svc_id, op, ctrl_index, str(data))
-
+        # Add by bouffalolab
+        end = "a5a5"
+        if isinstance(data, str):
+            data = bytes(data+end, 'utf-8')
+        elif isinstance(data, int):
+            data = data.to_bytes(1, "little")
+            data = data + bytearray(end.encode())
+        else:
+            data = data + bytearray(end.encode())
         logging.debug("btpclient command: send %d %d %d %r",
                       svc_id, op, ctrl_index, str(data))
 
