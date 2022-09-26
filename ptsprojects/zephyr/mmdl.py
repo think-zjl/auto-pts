@@ -40,10 +40,11 @@ from uuid import uuid4
 from binascii import hexlify
 import random
 from time import sleep
-
-
-device_uuid = hexlify(uuid4().bytes)
-device_uuid2 = hexlify(uuid4().bytes)
+# Add by bouffalolab 
+from ptsprojects.zephyr.mesh import device_uuid, device_uuid2
+# Del by bouffalolab 
+#device_uuid = hexlify(uuid4().bytes)
+#device_uuid2 = hexlify(uuid4().bytes)
 
 
 def set_pixits(ptses):

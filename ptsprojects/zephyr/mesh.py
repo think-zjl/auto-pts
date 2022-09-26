@@ -163,6 +163,9 @@ def set_pixits(ptses):
     pts.set_pixit("MESH", "TSPX_iut_model_id_publish_not_supported", "0000")
     pts.set_pixit("MESH", "TSPX_mdf_label_uuid_for_virtual_address", "112233445566778899AABBCCDDEEFFEE")
 
+# Add by bouffalolab
+device_uuid = hexlify(uuid4().bytes)
+device_uuid2 = hexlify(uuid4().bytes)
 
 def test_cases(ptses):
     """Returns a list of MESH test cases
@@ -172,8 +175,9 @@ def test_cases(ptses):
 
     stack = get_stack()
 
-    device_uuid = hexlify(uuid4().bytes)
-    device_uuid2 = hexlify(uuid4().bytes)
+    # Delete by bouffalolab
+    #device_uuid = hexlify(uuid4().bytes)
+    #device_uuid2 = hexlify(uuid4().bytes)
 
     pts_bd_addr = pts.q_bd_addr
 
