@@ -305,7 +305,10 @@ def core_reg_svc_mmdl():
     logging.debug("%s", core_reg_svc_mmdl.__name__)
 
     iutctl = get_iut()
-    iutctl.btp_socket.send(*CORE['mmdl_reg'])
+    name = chr(CORE['mmdl_reg'][3]) + iutctl.test_case.name
+    comble = (CORE['mmdl_reg'][0], CORE['mmdl_reg'][1], CORE['mmdl_reg'][2], name)
+
+    iutctl.btp_socket.send(*comble)
 
     core_reg_svc_rsp_succ()
 
