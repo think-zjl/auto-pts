@@ -16,33 +16,17 @@
 #
 
 """Bluez auto PTS client"""
+import importlib
 
-import os
-import sys
-
-import autoptsclient_common as autoptsclient
-import ptsprojects.bluez as autoprojects
-from ptsprojects.bluez.iutctl import get_iut
+from autopts import client as autoptsclient
+from autopts.ptsprojects.bluez import iutctl
 
 
 class BluezClient(autoptsclient.Client):
     def __init__(self):
-        super().__init__(get_iut, 'bluez')
-
-    def parse_args(self):
-        arg_parser = autoptsclient.CliParser("PTS automation client")
-        args = arg_parser.parse_args()
-
-        self.check_args(args)
-
-        return args
-
-    def init_iutctl(self, args):
-        autoprojects.iutctl.AUTO_PTS_LOCAL = autoptsclient.AUTO_PTS_LOCAL
-        autoprojects.iutctl.init(args.btpclient_path)
-
-    def cleanup(self):
-        autoprojects.iutctl.cleanup()
+        project = importlib.import_module('autopts.ptsprojects.bluez')
+        super().__init__(iutctl.get_iut, project, 'bluez')
+        iutctl.AUTO_PTS_LOCAL = autoptsclient.AUTO_PTS_LOCAL
 
 
 def main():

@@ -60,7 +60,7 @@ The rest of the setup is platform/mode specific:
 
 ### BlueZ
 
-See [ptsprojects/bluez/README.md](./ptsprojects/bluez/README.md)
+See [ptsprojects/bluez/README.md](autopts/ptsprojects/bluez/README.md)
 
 ### Zephyr BLE
 
@@ -98,7 +98,68 @@ The rest of the auto-pts client setup is platform/mode specific:
 
 Check out [Zephyr with AutoPTS step-by-step setup tutorial](#zephyr-with-autopts-step-by-step-setup-tutorial)
 
-### MyNewt NimBle (WIP)
+### MyNewt NimBle
+
+For building and flashing app image Newt tool is required. On Windows it should
+be installed as MSYS2 application.
+
+In MSYS2 MinGW x64 application:
+1. Install [MSYS2/MinGW](https://www.msys2.org) from installer and run
+    ```shell
+    $ pacman -Syu
+    $ pacman -Su
+    ```
+2. Install Git
+    ```shell
+    $ pacman -S git
+    ```
+3. Install Go
+   ```shell
+   $ pacman -S mingw-w64-x86_64-go
+   ```
+   If this command fails with error like:
+   ```shell
+   File /var/cache/pacman/pkg/mingw-w64-x86_64-libpng-1.6.12-1-any.pkg.tar.xz is corrupted (invalid or corrupted package (PGP signature)).
+   ```
+   keys need to be updated:
+   ```shell
+   $ pacman-key --init
+   $ pacman-key --populate msys2
+   $ pacman-key --refresh-keys
+   ```
+4. Install Newt tool. For testing Mynewt from master branch we often require
+   in-dev versions of Newt tool, from master branch. To install just latest
+   release:
+   ```shell
+   $ wget -P /tmp https://github.com/apache/mynewt-newt/archive/mynewt_1_8_0_tag.tar.gz
+   $ tar -xzf /tmp/mynewt_1_8_0_tag.tar.gz
+   $ cd mynewt-newt-mynewt_1_8_0_tag/mynewt-newt/newt
+   $ go get
+   $ go build
+   $ /home/user_name/mynewt-newt/newt/newt.exe
+   ```
+   To install Newt in-dev version:
+   ```shell
+   $ git clone https://github.com/apache/mynewt-newt.git
+   $ cd mynewt-newt/newt
+   $ go get
+   $ go build
+   $ mv /home/user_name/mynewt-newt/newt/newt.exe /usr/bin
+   ```
+   You can verify installation by calling `newt version`
+5. To install cross-compilation tools follow [this](https://github.com/apache/mynewt-documentation/blob/master/docs/get_started/native_install/cross_tools.rst)
+   guide
+6. Setup Mynewt Project using [this](https://github.com/apache/mynewt-documentation/blob/master/docs/get_started/project_create.rst)
+   guide
+7. Python functions must use environment we just setup, so functions calling
+   shell commands like `check_call` must use MSYS. In Windows we must setup
+   environment variable to specify this.
+   1. open Environment Variables settings by pressing <kbd>⊞ Win</kbd>+<kbd>R</kbd>
+      and typing `systempropertiesadvanced`.
+   2. Click “Environment Variables” button
+   3. In “Environment Variables” click `New`
+   4. As `Variable Name` set `MSYS2_BASH_PATH`
+   5. As `Variable Value` set `C:\msys64\usr\bin\bash.exe`
 
 # PTS Workspace Setup
 
@@ -146,7 +207,7 @@ Then start the AutoPTS Client using e.g. own workspace file:
 
 **Testing BlueZ on Linux**:
 
-See [ptsprojects/bluez/README.md](./ptsprojects/bluez/README.md)
+See [ptsprojects/bluez/README.md](autopts/ptsprojects/bluez/README.md)
 
 # Running AutoPTSClientBot
 
@@ -182,6 +243,8 @@ This may contain few sections:
     - `srv_port` - AutoPTSServer port(s)
     - `project_path` - path to project source directory
     - `workspace` - PTS workspace path to be used
+    - `store` - set True to save run results in a database .db file (default False)
+    - `database_file` - custom path to database .db file (default path: <project-dir>/TestCase.db)
     - `board` - IUT used. Currently nrf52 is supported only
     - `enable_max_logs` - enable debug logs
     - `retry` - maximum repeat count per test
@@ -190,14 +253,18 @@ This may contain few sections:
     - `recovery` - enable recovery after non-valid result (optional)
     - `superguard` - force recovery when server has been idle for the given time (optional)
     - `ykush` - reconnect board/PTS dongle during recovery, if YKUSH Switchable Hub is used (optional)
+    - `rtt_log` - collect IUT logs via RTT J-Link buffer named "Logger"
+    - `btmon` - collect IUT btsnoops with btmon
 - `git` - Git repositories configuration (optional)
     - `path` - path to project repo
     - `remote` - git remote repo name
     - `branch` - branch selected at git checkout
     - `stash_changes` - stash changes if local repo is dirty
+    - `update_repo` - if False, prevents bot from updating the repo
 - `mail` - Mail configuration (optional)
     - `sender` - sender e-mail address
     - `smtp_host`, `smtp_port` - sender SMTP configuration
+    - `subject` - overrides default email title
     - `name` - to be used in message footer
     - `passwd` - sender mailbox password. When Google account is used [allow
     less secure apps to access account](https://myaccount.google.com/lesssecureapps)
@@ -292,13 +359,10 @@ This feature was created to enable long runs of bot without supervision, because
 
 **Recover autoptsserver after exception**
 
-After python exception caught, kills **all** existing processes of PTS.exe, Fts.exe on Windows machine, cleans temporary PTS workspaces, and tries to restart autoptsserver. So if you need 2 autoptsserver instances, e.g. for MESH tests, this is the proper way to run them with recovery:
+Autoptsserver can recover itself after python exception or after request received from autoptsclient.
+If you have YKUSH hub, you can run server with option --ykush, so recovery steps will include re-plugin of PTS dongles:
 
-    $ python autoptsserver.py -S 65000 65002 --recovery
-    
-If you have YKUSH hub, you can run with option --ykush, so recovery steps will include re-plugin of PTS dongles:
-
-    $ python autoptsserver.py -S 65000 65002 --recovery --ykush 1 2
+    $ python autoptsserver.py -S 65000 65002 --ykush 1 2
 
 where 1 and 2 are numbers of YKUSH USB ports (More about [YKUSH hub](https://www.yepkit.com/products/ykush)).
 
@@ -308,7 +372,8 @@ Helpful --superguard option will blindly trigger recovery after given amount of 
 
 **Recover autoptsclient after exception**
 
-Recovery of autoptsclient is triggered after python exception or test case result other than PASS, INCONC or FAIL. It sends recovery request to autoptsserver, so server has to run in recovery mode too.
+Recovery of autoptsclient can be enabled with --recovery option and is triggered after python exception or test case result other than PASS, INCONC or FAIL.
+Then it sends recovery request to autoptsserver, restarting and reinitializing PTSes.
 
     $ python ./autoptsclient-zephyr.py zephyr-master -t COM3 -b nrf52 --recovery
 

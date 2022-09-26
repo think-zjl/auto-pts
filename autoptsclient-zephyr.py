@@ -16,37 +16,16 @@
 #
 
 """Zephyr auto PTS client"""
+import importlib
 
-import os
-import sys
-
-import autoptsclient_common as autoptsclient
-import ptsprojects.zephyr as autoprojects
-from ptsprojects.zephyr.iutctl import get_iut
+from autopts import client as autoptsclient
+from autopts.ptsprojects.zephyr.iutctl import get_iut
 
 
 class ZephyrClient(autoptsclient.Client):
     def __init__(self):
-        super().__init__(get_iut, 'zephyr')
-
-    def parse_args(self):
-        arg_parser = autoptsclient.CliParser("PTS automation client",
-                                             autoprojects.iutctl.Board.names)
-
-        args = arg_parser.parse_args()
-
-        if args.hci is None:
-            args.qemu_bin = autoprojects.iutctl.QEMU_BIN
-
-        self.check_args(args)
-
-        return args
-
-    def init_iutctl(self, args):
-        autoprojects.iutctl.init(args)
-
-    def cleanup(self):
-        autoprojects.iutctl.cleanup()
+        project = importlib.import_module('autopts.ptsprojects.zephyr')
+        super().__init__(get_iut, project, 'zephyr')
 
 
 def main():

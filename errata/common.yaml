@@ -1,0 +1,91 @@
+# To add note to the reports about awaited errata, list them here e.g.:
+# GAP/CONN/NCON/BV-01-C: CASE00xxxxx
+# GAP/CONN/NCON/BV-02-C: CASE00xxxxx
+
+GAP/CONN/CPUP/BV-04-C: CASE0072503
+GAP/CONN/CPUP/BV-05-C: CASE0072503
+GAP/BOND/BON/BV-01-C: Request ID 15828
+GAP/BOND/BON/BV-02-C: Request ID 15828
+GAP/BOND/BON/BV-04-C: Request ID 13064
+GAP/SEC/AUT/BV-19-C: CASE0072154
+GAP/SEC/AUT/BV-25-C: CASE0072001
+GAP/SEC/SEM/BV-62-C: TSE18349
+GAP/SEC/SEM/BV-63-C: TSE18349
+GAP/SEC/SEM/BV-64-C: TSE18349
+GAP/SEC/SEM/BV-65-C: TSE18349
+GAP/SEC/SEM/BV-66-C: TSE18349
+GAP/SEC/SEM/BV-67-C: TSE18349
+GAP/SEC/SEM/BI-20-C: TSE19231
+GAP/SEC/SEM/BI-21-C: TSE19231
+GAP/DM/NAD/BV-02-C: TSE19171
+GAP/DM/LEP/BV-06-C: TSE19171
+GAP/PADV/PASM/BV-01-C: https://github:com/intel/auto-pts/issues/740
+GAP/PADV/PAM/BV-01-C: https://github:com/intel/auto-pts/issues/740
+GAP/PADV/PASE/BV-01-C: https://github:com/intel/auto-pts/issues/740
+GAP/PADV/PASE/BV-02-C: https://github:com/intel/auto-pts/issues/740
+GAP/PADV/PASE/BV-03-C: https://github:com/intel/auto-pts/issues/740
+GAP/PADV/PASE/BV-04-C: https://github:com/intel/auto-pts/issues/740
+GAP/PADV/PASE/BV-05-C: https://github:com/intel/auto-pts/issues/740
+GAP/PADV/PASE/BV-06-C: https://github:com/intel/auto-pts/issues/740
+GAP/PADV/PAST/BV-01-C: https://github:com/intel/auto-pts/issues/740
+GAP/PADV/PAST/BV-02-C: https://github:com/intel/auto-pts/issues/740
+GATT/SR/GAC/BI-01-C: CASE0072072
+L2CAP/LE/CPU/BV-01-C: TSE18295
+L2CAP/LE/CID/BV-01-C: CASE0072479
+L2CAP/LE/CID/BV-02-C: CASE0072479
+L2CAP/LE/CID/BV-04-C: CASE0072479
+L2CAP/LE/CFC/BV-25-C: CASE0072529
+L2CAP/LE/CFC/BV-02-C: Request ID 16592
+L2CAP/ECFC/BV-11-C: CASE0072485
+L2CAP/ECFC/BV-13-C: CASE0072486
+L2CAP/ECFC/BV-15-C: CASE0072487
+L2CAP/ECFC/BV-22-C: Request ID 14486
+L2CAP/ECFC/BV-32-C: Request ID 16410
+L2CAP/ECFC/BV-38-C: CASE0072488
+L2CAP/ECFC/BV-43-C: TSE18351
+L2CAP/ECFC/BV-44-C: TSE18351
+L2CAP/ECFC/BV-68-C: TSE18297
+SM/CEN/KDU/BV-06-C: TSE19221
+SM/CEN/KDU/BI-02-C: TSE18140 Request ID 16199
+SM/CEN/KDU/BI-03-C: TSE18140 Request ID 16199
+SM/PER/KDU/BI-02-C: TSE18140
+SM/PER/KDU/BI-03-C: TSE18140
+MESH/CFGCL/KR/BV-04-C: Fixed in 8.1.0
+MESH/NODE/PROV/BV-10-C: CASE0071466 Fixed in 8.1.0
+MESH/NODE/CFG/HBP/BV-02-C: CASE0071465 Fixed in 8.1.0
+MESH/CFGCL/CFG/SL/BV-01-C: CASE0071125 Fixed in 8.1.0
+MESH/PVNR/PROV/BV-01-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/PVNR/PROV/BV-02-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/PVNR/PROV/BV-03-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/PVNR/PROV/BV-04-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/PVNR/PROV/BV-05-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/PVNR/PROV/BV-06-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/PVNR/PROV/BV-08-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/NODE/PROV/BV-02-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/NODE/PROV/BV-04-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/NODE/PROV/BV-05-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/NODE/PROV/BV-06-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/NODE/PROV/BV-08-C: https://github.com/zephyrproject-rtos/zephyr/pull/38492
+MESH/PVNR/PROV/BI-18-C: https://github.com/zephyrproject-rtos/zephyr/pull/38464
+MESH/NODE/PROV/BI-02-C: https://github.com/zephyrproject-rtos/zephyr/pull/38250
+MESH/NODE/CFG/MP/BI-03-C: https://github.com/zephyrproject-rtos/zephyr/pull/38360
+MESH/NODE/FRND/FN/BV-08-C: https://github.com/zephyrproject-rtos/zephyr/pull/38312
+MMDL/SR/LCTLT/BV-02-C: CASE0071445 https://www.bluetooth.org/tse/errata_view.cfm?errata_id=17080
+MMDL/CL/SNR/BV-07-C: CASE0071833
+MMDL/CL/SNR/BV-08-C: CASE0071833
+MMDL/CL/SNR/BV-09-C: CASE0071833
+MMDL/SR/GLV/BV-02-C: CASE0071690
+MMDL/SR/GLV/BV-05-C: CASE0071690
+MMDL/SR/GOO/BV-02-C: CASE0071690
+MMDL/SR/GPL/BV-11-C: CASE0071690
+MMDL/SR/LCTL/BV-05-C: CASE0071690
+MMDL/SR/LHSL/BV-06-C: CASE0071690
+MMDL/SR/LHSLH/BV-04-C: CASE0071690
+MMDL/SR/LHSLSA/BV-04-C: CASE0071690
+MMDL/SR/LLN/BV-15-C: CASE0071690
+MMDL/SR/LLN/BV-16-C: CASE0071690
+MMDL/SR/LXYL/BV-07-C: CASE0071690
+MMDL/SR/SNRS/BV-01-C: SE15886 TSE18008
+MMDL/SR/SNRS/BI-01-C: SE15886 TSE18008
+MMDL/SR/LLC/BV-06-C: Unstable - conversion issue in bound states.
+MMDL/SR/LLC/BV-07-C: Unstable - conversion issue in bound states.

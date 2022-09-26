@@ -30,27 +30,44 @@
 
 import argparse
 import copy
+import logging
 import os
 import shutil
 import subprocess
+import sys
 import threading
 import time
 import traceback
-from time import sleep
-import pythoncom
-import wmi
-import sys
-import logging
 import xmlrpc.client
 import xmlrpc.server
-import winutils
-import ptscontrol
 from os.path import dirname, abspath
-from config import SERVER_PORT
-from queue import Queue
+from pathlib import Path
+from time import sleep
+
+import pythoncom
+import win32com
+import win32com.client
+import wmi
+from autopts import winutils, ptscontrol
+
+from autopts.config import SERVER_PORT
+from autopts.utils import usb_power
 
 log = logging.debug
 PROJECT_DIR = dirname(abspath(__file__))
+PTS_START_LOCK = threading.RLock()
+
+
+def server_start_lock_wrapper(func):
+    def _server_start_lock_wrapper(*args):
+        try:
+            PTS_START_LOCK.acquire()
+            ret = func(*args)
+        finally:
+            PTS_START_LOCK.release()
+        return ret
+
+    return _server_start_lock_wrapper
 
 
 class PyPTSWithXmlRpcCallback(ptscontrol.PyPTS):
@@ -58,10 +75,9 @@ class PyPTSWithXmlRpcCallback(ptscontrol.PyPTS):
 
     def __init__(self):
         """Constructor"""
+        super().__init__()
 
         log("%s", self.__init__.__name__)
-
-        ptscontrol.PyPTS.__init__(self)
 
         # address of the auto-pts client that started it's own xmlrpc server to
         # receive callback messages
@@ -112,10 +128,6 @@ class SvrArgumentParser(argparse.ArgumentParser):
                           nargs="+", default=[SERVER_PORT],
                           help="Specify the server port number")
 
-        self.add_argument("--recovery", action='store_true', default=False,
-                          help="Specify if autoptsserver should try to recover"
-                          " itself after exception.")
-
         self.add_argument("--superguard", default=0, type=float, metavar='MINUTES',
                           help="Specify amount of time in minutes, after which"
                           " super guard will blindly trigger recovery steps.")
@@ -124,30 +136,32 @@ class SvrArgumentParser(argparse.ArgumentParser):
                           help="Specify ykush hub downstream port number, so "
                           "during recovery steps PTS dongle could be replugged.")
 
-    def check_args(self, args):
+    @staticmethod
+    def check_args(arg):
         """Sanity check command line arguments"""
 
-        for srv_port in args.srv_port:
+        for srv_port in arg.srv_port:
             if not 49152 <= srv_port <= 65535:
                 sys.exit("Invalid server port number=%s, expected range <49152,65535> " % (srv_port,))
 
-        if len(args.srv_port) == 1:
-            args.srv_port = args.srv_port[0]
+        if len(arg.srv_port) == 1:
+            arg.srv_port = arg.srv_port[0]
 
-        args.superguard = 60 * args.superguard
+        arg.superguard = 60 * arg.superguard
 
     def parse_args(self, args=None, namespace=None):
-        args = super().parse_args()
-        self.check_args(args)
-        return args
+        arg = super().parse_args()
+        self.check_args(arg)
+        return arg
 
 
 def get_workspace(workspace):
-    for root, dirs, files in os.walk(os.path.join(PROJECT_DIR, 'workspaces'),
+    for root, dirs, files in os.walk(os.path.join(PROJECT_DIR, 'autopts/workspaces'),
                                      topdown=True):
         for name in dirs:
             if name == workspace:
                 return os.path.join(root, name)
+    return None
 
 
 def kill_all_processes(name):
@@ -156,55 +170,49 @@ def kill_all_processes(name):
         try:
             ps.Terminate()
             log("%s process (PID %d) terminated successfully" % (name, ps.ProcessId))
-        except:
+        except BaseException as exc:
+            logging.exception(exc)
             log("There is no %s process running with id: %d" % (name, ps.ProcessId))
 
 
 def delete_workspaces():
     def recursive(directory, depth):
         depth -= 1
-        with os.scandir(directory) as it:
-            for file in it:
-                if file.is_dir() and depth > 0:
-                    recursive(file.path, depth)
-                elif file.name.startswith('temp_') and file.name.endswith('.pqw6'):
-                    os.remove(file)
+        with os.scandir(directory) as iterator:
+            for f in iterator:
+                if f.is_dir() and depth > 0:
+                    recursive(f.path, depth)
+                elif f.name.startswith('temp_') and f.name.endswith('.pqw6'):
+                    os.remove(f)
 
-    depth = 4
-    recursive(os.path.join(PROJECT_DIR, 'workspaces'), depth)
-
-
-def recover_pts(ykush_ports=None):
-    print("Recovering PTS ...")
-    kill_all_processes("PTS.exe")
-    kill_all_processes("Fts.exe")
-    delete_workspaces()
-    if ykush_ports:
-        turn_on_dongle(ykush_ports)
+    init_depth = 4
+    recursive(os.path.join(PROJECT_DIR, 'autopts/workspaces'), init_depth)
 
 
-def turn_on_dongle(ykush_ports):
-    ykushcmd = 'ykushcmd'
-    if sys.platform == "win32":
-        ykushcmd += '.exe'
+def power_dongle(ykush_port, on=True):
+    usb_power(ykush_port, on)
 
-    for port in ykush_ports:
-        subprocess.Popen([ykushcmd, '-d', str(port)], stdout=subprocess.PIPE)
-        print('Repluging PTS dongle on ykush port', str(port))
 
-    time.sleep(5)
+def dongle_exists(serial_address):
+    wmi = win32com.client.GetObject("winmgmts:")
 
-    for port in ykush_ports:
-        subprocess.Popen([ykushcmd, '-u', str(port)], stdout=subprocess.PIPE)
+    if 'USB' in serial_address:  # USB:InUse:X&XXXXXXXX&X&X
+        serial_address = serial_address.split(r':')[2]
+        usbs = wmi.InstancesOf("Win32_USBHub")
+    else:  # COMX
+        usbs = wmi.InstancesOf("Win32_SerialPort")
 
-    time.sleep(2)
+    for usb in usbs:
+        if serial_address in usb.DeviceID:
+            return True
+
+    return False
 
 
 class SuperGuard(threading.Thread):
-    def __init__(self, timeout, queue):
+    def __init__(self, timeout):
         threading.Thread.__init__(self, daemon=True)
         self.servers = []
-        self.queue = queue
         self.timeout = timeout
         self.end = False
         self.was_timeout = False
@@ -217,106 +225,163 @@ class SuperGuard(threading.Thread):
                     idle_num += 1
 
             if idle_num == len(self.servers) and idle_num != 0:
+                log('Superguard timeout, recovering')
                 for srv in self.servers:
-                    srv.terminate('Superguard timeout')
+                    srv.request_recovery()
                 self.was_timeout = True
-                self.servers.clear()
             sleep(5)
 
     def clear(self):
         self.servers.clear()
         self.was_timeout = False
 
-    def add_server(self, server):
-        self.servers.append(server)
+    def add_server(self, srv):
+        self.servers.append(srv)
 
     def terminate(self):
         self.end = True
 
 
 class Server(threading.Thread):
-    def __init__(self, args=None, queue=None):
+    def __init__(self, _args=None):
         threading.Thread.__init__(self, daemon=True)
-        self.queue = queue
         self.server = None
-        self.args = args
+        self._args = _args
         self.pts = None
+        self._device = None
+        self.end = False
+        self.recovery_request = False
+        self.name = 'S-' + str(self._args.srv_port)
+        self.is_ready = False
+        if self._args.ykush and type(self._args.ykush) is list:
+            self._args.ykush = ' '.join(self._args.ykush)
 
     def last_start(self):
-        if self.pts:
+        try:
             return self.pts.last_start_time
-        return time.time()
+        except:
+            return time.time()
 
-    def main(self, args):
+    def main(self, _args):
         """Main."""
         pythoncom.CoInitialize()
-        script_name = os.path.basename(sys.argv[0])  # in case it is full path
-        script_name_no_ext = os.path.splitext(script_name)[0]
-
-        log_filename = "%s_%s.log" % (script_name_no_ext, str(args.srv_port))
-        format = ("%(asctime)s %(name)s %(levelname)s : %(message)s")
-
-        logging.basicConfig(format=format,
-                            filename=log_filename,
-                            filemode='a',
-                            level=logging.DEBUG)
 
         c = wmi.WMI()
         for iface in c.Win32_NetworkAdapterConfiguration(IPEnabled=True):
             print("Local IP address: %s DNS %r" % (iface.IPAddress, iface.DNSDomain))
 
+        while not self.end:
+            self.recovery_request = False
+            try:
+                self.server_init()
+                self.is_ready = True
+                while not self.end and not self.recovery_request:
+                    self.server.handle_request()
+            except Exception as e:
+                logging.exception(e)
+                kill_all_processes('PTS.exe')
+
+            ptscontrol.set_stop_pts(False)
+            self.is_ready = False
+
+        return 0
+
+    @server_start_lock_wrapper
+    def server_init(self):
+        if self.pts:
+            self.pts.stop_pts()
+            self.pts.delete_temp_workspace()
+            del self.pts
+            self.pts = None
+
+        if self.server:
+            self.server.server_close()
+            del self.server
+            self.server = None
+
+        if self._args.ykush:
+            log(f'Replugging device ({self._device}) under ykush:{self._args.ykush}')
+            power_dongle(self._args.ykush, False)
+            while self._device and dongle_exists(self._device):
+                pass
+            power_dongle(self._args.ykush, True)
+            while self._device and not dongle_exists(self._device):
+                pass
+
         print("Starting PTS ...")
         self.pts = PyPTSWithXmlRpcCallback()
+        self._device = self.pts._device
         print("OK")
 
-        print("Serving on port {} ...".format(args.srv_port))
+        print("Serving on port {} ...".format(self._args.srv_port))
 
-        self.server = xmlrpc.server.SimpleXMLRPCServer(("", args.srv_port), allow_none=True)
+        self.server = xmlrpc.server.SimpleXMLRPCServer(("", self._args.srv_port), allow_none=True)
         self.server.register_function(self.request_recovery, 'request_recovery')
         self.server.register_function(self.list_workspace_tree, 'list_workspace_tree')
         self.server.register_function(self.copy_file, 'copy_file')
         self.server.register_function(self.delete_file, 'delete_file')
+        self.server.register_function(self.ready, 'ready')
+        self.server.register_function(self.get_system_model, 'get_system_model')
+        self.server.register_function(self.shutdown_pts_bpv, 'shutdown_pts_bpv')
         self.server.register_instance(self.pts)
         self.server.register_introspection_functions()
-        self.server.serve_forever()
-        self.server.server_close()
-        return 0
+        self.server.timeout = 1.0
 
     def run(self):
         try:
-            self.main(self.args)
-        except Exception:
-            print('Server ', str(self.args.srv_port), ' finished')
-            self.terminate('from Server process on port ' +
-                           str(self.args.srv_port) + ':\n' + traceback.format_exc())
+            self.main(self._args)
+        except Exception as exc:
+            self.end = True
+            logging.exception(exc)
+            print('Server ', str(self._args.srv_port), ' finished')
 
     def request_recovery(self):
-        self.terminate('Recovery request')
+        self.is_ready = False
+        self.recovery_request = True
+        ptscontrol.set_stop_pts(True)
 
-    def terminate(self, msg):
-        try:
-            if self.server:
-                threading.Thread(target=self.server.shutdown, daemon=True).start()
-        except:
-            traceback.print_exc()
-        if self.queue:
-            self.queue.put(Exception(msg))
+    def terminate(self):
+        self.is_ready = False
+        self.end = True
+
+    def ready(self):
+        return self.is_ready
+
+    def get_system_model(self):
+        proc = subprocess.Popen(['systeminfo'],
+                                shell=False,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+
+        if stdout:
+            info = stdout.splitlines()
+            for line in info:
+                line = line.decode('utf-8')
+                if 'System Model' in line:
+                    for platform in ['VirtualBox', 'VMware']:
+                        if platform in line:
+                            return platform
+                    return 'Real HW'
+        return 'Unknown'
 
     def list_workspace_tree(self, workspace_dir):
-        self.pts.last_restart_time = time.time()
-        logs_root = get_workspace(workspace_dir)
-        list = []
+        if Path(workspace_dir).is_absolute():
+            logs_root = workspace_dir
+        else:
+            logs_root = get_workspace(workspace_dir)
+
+        file_list = []
         for root, dirs, files in os.walk(logs_root,
                                          topdown=False):
             for name in files:
-                list.append(os.path.join(root, name))
+                file_list.append(os.path.join(root, name))
 
-            list.append(root)
+            file_list.append(root)
 
-        return list
+        return file_list
 
     def copy_file(self, file_path):
-        self.pts.last_restart_time = time.time()
         file_bin = None
         if os.path.isfile(file_path):
             with open(file_path, 'rb') as handle:
@@ -324,77 +389,76 @@ class Server(threading.Thread):
         return file_bin
 
     def delete_file(self, file_path):
-        self.pts.last_restart_time = time.time()
         if os.path.isfile(file_path):
             os.remove(file_path)
         elif os.path.isdir(file_path):
             shutil.rmtree(file_path, ignore_errors=True)
 
+    def shutdown_pts_bpv(self):
+        kill_all_processes('PTS.exe')
+        kill_all_processes('Fts.exe')
 
-def multi_main(args, queue, superguard):
+
+def multi_main(_args, _superguard):
     """Multi server main."""
 
     servers = []
-    for port in args.srv_port:
-        args_copy = copy.deepcopy(args)
-        args_copy.srv_port = port
-        srv = Server(args=args_copy, queue=queue)
+    for i in range(len(_args.srv_port)):
+        args_copy = copy.deepcopy(_args)
+        args_copy.srv_port = _args.srv_port[i]
+        args_copy.ykush = _args.ykush[i] if _args.ykush else None
+        srv = Server(_args=args_copy)
         servers.append(srv)
         srv.start()
         superguard.add_server(srv)
+
+    all_alive = True
+    while all_alive:
+        for s in servers:
+            if not s.is_alive():
+                all_alive = False
         sleep(5)
 
-    while queue.empty():
-        for srv in servers:
-            if not srv.is_alive():
-                queue.put(Exception('Server is down'))
-        sleep(2)  # This loop has a huge impact on the performance of server threads
-
-    [s.terminate('') for s in servers]
+    for s in servers:
+        s.terminate()
 
 
 if __name__ == "__main__":
     winutils.exit_if_admin()
-    args = SvrArgumentParser("PTS automation server").parse_args()
-    queue = Queue()
+    _args = SvrArgumentParser("PTS automation server").parse_args()
 
-    with os.scandir(PROJECT_DIR) as it:
-        for file in it:
-            if file.name.startswith('autoptsserver_') and file.name.endswith('.log'):
-                os.remove(file)
+    script_name = os.path.basename(sys.argv[0])  # in case it is full path
+    script_name_no_ext = os.path.splitext(script_name)[0]
 
-    superguard = SuperGuard(float(args.superguard), queue)
-    if args.superguard:
+    log_filename = script_name_no_ext + '.log'
+    format_template = '%(threadName)s %(asctime)s %(name)s %(levelname)s : %(message)s'
+
+    logging.basicConfig(format=format_template,
+                        filename=log_filename,
+                        filemode='w',
+                        level=logging.DEBUG)
+
+    superguard = SuperGuard(float(_args.superguard))
+    if _args.superguard:
         superguard.start()
 
-    while True:
-        try:
-            if type(args.srv_port) is int:
-                server = Server(queue=queue)
-                superguard.add_server(server)
+    if _args.ykush:
+        for port in _args.ykush:
+            power_dongle(port, False)
 
-                server.main(args)  # Run server in main process
-            else:
-                multi_main(args, queue, superguard)  # Run many servers in threads
+    try:
+        if isinstance(_args.srv_port, int):
+            server = Server(_args)
+            superguard.add_server(server)
 
-            exceptions = ''
-            while not queue.empty():
-                try:
-                    exceptions += str(queue.get_nowait()) + '\n'
-                except:
-                    traceback.print_exc()
+            server.main(_args)  # Run server in main process
+        else:
+            multi_main(_args, superguard)  # Run many servers in threads
 
-            if exceptions != '':
-                raise Exception(exceptions)
-            break
+    except KeyboardInterrupt:  # Ctrl-C
+        pass
 
-        except KeyboardInterrupt:  # Ctrl-C
-            os._exit(14)
-
-        except:
-            traceback.print_exc()
-            if args.recovery or superguard.was_timeout:
-                superguard.clear()
-                recover_pts(args.ykush)
-            else:
-                os._exit(16)
+    except Exception as e:
+        logging.exception(e)
+        traceback.print_exc()
+        sys.exit(16)
