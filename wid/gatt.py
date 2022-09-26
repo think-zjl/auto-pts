@@ -374,8 +374,7 @@ def hdl_wid_25(desc):
     MMI.parse_description(desc)
 
     pts_chrc_uuid = MMI.args[0]
-    pts_chrc_handles = [int(MMI.args[1], 16), int(MMI.args[2], 16),
-                        int(MMI.args[3], 16), int(MMI.args[4], 16)]
+    pts_chrc_handles = [int(MMI.args[i], 16) for i in range(1, len(MMI.args))]
 
     iut_start_handle = None
     iut_end_handle = None
@@ -383,7 +382,7 @@ def hdl_wid_25(desc):
     bd_addr = btp.pts_addr_get()
     bd_addr_type = btp.pts_addr_type_get()
 
-    # Find pts_chrc_uuid service and it's handle range
+    # Find pts_chrc_uuid service, and it's handle range
     svcs = btp.gatts_get_attrs(type_uuid='2800')
     for svc in svcs:
         handle, perm, type_uuid = svc

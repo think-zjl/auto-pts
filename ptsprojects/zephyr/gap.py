@@ -162,8 +162,10 @@ def set_pixits(ptses):
     pts.set_pixit("GAP", "TSPX_encryption_before_service_request", "FALSE")
     pts.set_pixit("GAP", "TSPX_tester_appearance", "0000")
     pts.set_pixit("GAP", "TSPX_advertising_data", ad_pixit)
+    #pts.set_pixit("GAP", "TSPX_iut_device_IRK_for_resolvable_privacy_address_generation_procedure",
+    #              "00000000000000000000000000000000")
     pts.set_pixit("GAP", "TSPX_iut_device_IRK_for_resolvable_privacy_address_generation_procedure",
-                  "00000000000000000000000000000000")
+                  "11111111111111111111111111111111")
     pts.set_pixit("GAP", "TSPX_tester_device_IRK_for_resolvable_privacy_address_generation_procedure",
                   "0123456789ABCDEF0123456789ABCDEF")
     pts.set_pixit("GAP",

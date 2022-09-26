@@ -80,6 +80,7 @@ def iut_reset():
     zephyrctl.wait_iut_ready_event()
     btp.core_reg_svc_gap()
     btp.core_reg_svc_mesh()
+    btp.core_reg_svc_mmdl()
     btp.gap_read_ctrl_info()
     btp.mesh_init()
 

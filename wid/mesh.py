@@ -386,6 +386,27 @@ def hdl_wid_31(desc):
         return True
     return False
 
+#def hdl_wid_33(_: WIDParams):
+def hdl_wid_33(desc):
+    """
+    Implements:
+    description: 'Please start create link and provisioning.
+                  PTS will broadcast unprovisioned device beacon with UUID = TSPX_device_uuid value'
+    """
+    stack = get_stack()
+    uuid = stack.mesh.dev_uuid
+    addr = 0x0002
+    attention_duration = 0x00
+
+    if not stack.mesh.is_initialized:
+        btp.mesh_config_prov()
+        btp.mesh_init()
+
+        if stack.mesh.iut_is_provisioner:
+            btp.mesh_prov_node()
+
+    btp.mesh_provision_adv(uuid, addr, attention_duration)
+    return True
 
 def hdl_wid_35(desc):
     """

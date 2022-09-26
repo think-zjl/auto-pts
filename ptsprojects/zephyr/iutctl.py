@@ -67,7 +67,7 @@ class ZephyrCtl:
         self.native = None
 
         if self.tty_file and args.board:  # DUT is a hardware board, not QEMU
-            self.get_debugger_snr()
+            #self.get_debugger_snr()
             self.board = Board(args.board, args.kernel_image, self)
         else:  # DUT is QEMU or a board that won't be reset
             self.board = None
@@ -219,7 +219,17 @@ class ZephyrCtl:
 
     def wait_iut_ready_event(self):
         """Wait until IUT sends ready event after power up"""
-        self.reset()
+        #self.reset()
+        command = ('echo eeff000000 | xxd -r -ps > /dev/ttyUSB0')
+        reset_process = subprocess.call(command, shell=True)
+        #print("_get_reset_cmd_bfl")
+        #ser = serial.Serial("/dev/ttyUSB0", baudrate=SERIAL_BAUDRATE, timeout=1)
+        # to high
+        #ser.rts=1
+        # to low
+        #ser.rts=0
+        #ser.close()
+       
 
         tuple_hdr, tuple_data = self.btp_socket.read()
 
@@ -289,11 +299,13 @@ class Board:
 
     nrf52 = "nrf52"
     reel  = "reel_board"
+    bfl = "bfl"
 
     # for command line options
     names = [
         nrf52,
-        reel
+        reel,
+        bfl
     ]
 
     def __init__(self, board_name, kernel_image, iutctl):
@@ -343,7 +355,8 @@ class Board:
         """Return reset command for a board"""
         reset_cmd_getters = {
             self.nrf52: self._get_reset_cmd_nrf52,
-            self.reel: self._get_reset_cmd_reel
+            self.reel: self._get_reset_cmd_reel,
+            self.bfl: self._get_reset_cmd_bfl
         }
 
         reset_cmd_getter = reset_cmd_getters[self.name]
@@ -367,6 +380,37 @@ class Board:
 
         """
         return 'pyocd cmd -c reset'
+    
+    def _get_reset_cmd_bfl(self):
+        """Return reset command for Reel_Board DUT
+
+        Dependency: pyocd command line tools
+
+        """
+#
+#        print("_get_reset_cmd_bfl")
+#        if True:
+#            command = ('echo eeff000000 | xxd -r -ps > /dev/ttyUSB0')
+#            print("_get_reset_cmd_bfl")
+#            reset_process = subprocess.call(command, shell=True)
+#            print("_get_reset_cmd_bfl")
+#            print("_get_reset_cmd_bfl")
+#        else:
+#            try:
+#                ser = serial.Serial("/dev/ttyUSB0",
+#                                    baudrate=SERIAL_BAUDRATE, timeout=1)
+#                # to high
+#                ser.rts=1
+#                time.sleep(1)
+#                # to low
+#                ser.rts=0
+#                ser.close()
+#                time.sleep(1)
+#            except serial.SerialException:
+#                pass
+# 
+#        print("_get_reset_cmd_bfl 1")
+        return  None
 
 
 def get_iut():
