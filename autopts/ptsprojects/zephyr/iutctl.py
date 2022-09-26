@@ -68,14 +68,15 @@ class ZephyrCtl:
         self.native = None
 
 #zjl<<<<<<< HEAD:ptsprojects/zephyr/iutctl.py
-        if self.tty_file and args.board:  # DUT is a hardware board, not QEMU
-            #self.get_debugger_snr()
-            self.board = Board(args.board, args.kernel_image, self)
+#        if self.tty_file and args.board:  # DUT is a hardware board, not QEMU
+#            #self.get_debugger_snr()
+#            self.board = Board(args.board, args.kernel_image, self)
 #=======
-#        if self.tty_file and args.board_name:  # DUT is a hardware board, not QEMU
-#            if self.debugger_snr is None:
-#                self.debugger_snr = get_debugger_snr(self.tty_file)
-#            self.board = Board(args.board_name, self)
+        if self.tty_file and args.board_name:  # DUT is a hardware board, not QEMU
+            print(args.board_name)
+            if self.debugger_snr is None:
+                self.debugger_snr = get_debugger_snr(self.tty_file)
+            self.board = Board(args.board_name, args.kernel_image, self)
 #>>>>>>> intel/master:autopts/ptsprojects/zephyr/iutctl.py
         else:  # DUT is QEMU or a board that won't be reset
             self.board = None
@@ -212,7 +213,9 @@ class ZephyrCtl:
         self.rtt_logger_stop()
         self.btmon_stop()
 
-        self.board.reset()
+        #self.board.reset()
+        command = ('echo eeff000000 | xxd -r -ps > /dev/ttyUSB0')
+        reset_process = subprocess.call(command, shell=True)
 
     def wait_iut_ready_event(self):
         """Wait until IUT sends ready event after power up"""
@@ -263,7 +266,9 @@ class ZephyrCtl:
             self.qemu_process = None
 
         if self.board:
-            self.board.reset()
+            #self.board.reset()
+            command = ('echo eeff000000 | xxd -r -ps > /dev/ttyUSB0')
+            reset_process = subprocess.call(command, shell=True)
 
         if self.iut_log_file:
             self.iut_log_file.close()
