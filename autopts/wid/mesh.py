@@ -130,12 +130,13 @@ def hdl_wid_8(params: WIDParams):
     description: Please enter string:
     """
     stack = get_stack()
-
+    # add by bouffalolab for MESH/PVNR/PROV/BV-05-C   
+    time.sleep(1) 
     pattern = re.compile(
         r'(string):\s\s+([a-zA-Z]+).')
     params = pattern.findall(params.description)
     if not params:
-        logging.error("%s parsing error", hdl_wid_7.__name__)
+        logging.error("%s parsing error", hdl_wid_8.__name__)
         ret = stack.mesh.oob_data.data.decode('UTF-8')
     else:
         params = dict(params)
@@ -148,6 +149,15 @@ def hdl_wid_8(params: WIDParams):
     stack.mesh.oob_action.data = None
     return ret
 
+# Add by bouffallolab for MESH/PVNR/PROV/BV-02-C (code need rewrite reference hdl_wid_8)
+def hdl_wid_9(params: WIDParams):
+    """
+    Implements: output
+    description: Please push the number of times::
+    """
+    stack = get_stack()
+
+    return stack.mesh.oob_data.data
 
 def hdl_wid_10(_: WIDParams):
     """
@@ -1265,6 +1275,8 @@ def hdl_wid_304(_: WIDParams):
     Implements:
     description: Please click OK to send Friend Poll message.
     """
+    # add by bouffalolab for MESH/NODE/CFG/HBP/BV-05-C
+    btp.mesh_lpn_poll()
     return True
 
 
@@ -2915,8 +2927,8 @@ def hdl_wid_650(params: WIDParams):
 
     if "Node Reset" in params.description:
         btp.mesh_cfg_node_reset(stack.mesh.net_idx, stack.mesh.address_lt1)
-
-        return stack.mesh.status == 0x01
+        # This maybe error, mesh.status maybe 0x00 (modify 0x01 to 0x00)
+        return stack.mesh.status == 0x00
 
 
 def hdl_wid_652(_: WIDParams):

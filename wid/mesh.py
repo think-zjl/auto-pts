@@ -113,6 +113,21 @@ def hdl_wid_8(desc):
     stack.mesh.oob_action.data = None
     return ret
 
+# Add by bouffallolab TODO
+def hdl_wid_9(desc):
+    """
+    Implements: ENTER_STRING
+    :param desc: Please push the number of times:
+    :return:
+    """
+    stack = get_stack()
+
+    ret = stack.mesh.oob_data.data.decode('UTF-8')
+
+    # cleanup
+    #stack.mesh.oob_data.data = None
+    #stack.mesh.oob_action.data = None
+    return ret
 
 def hdl_wid_12(desc):
     """
