@@ -196,7 +196,8 @@ def test_cases(ptses):
         TestFunc(lambda: pts.update_pixit_param(
             "GAP", "TSPX_iut_invalid_connection_interval_min", format(0x0c80, '04x'))),
         TestFunc(lambda: pts.update_pixit_param(
-            "GAP", "TSPX_iut_invalid_connection_interval_max", format(0x0c80, '04x'))),
+            # Modify by bouffaloab for GAP/CONN/CPUP/BV-05-C
+            "GAP", "TSPX_iut_invalid_connection_interval_max", format(0x0c60, '04x'))),
         TestFunc(lambda: pts.update_pixit_param(
             "GAP", "TSPX_iut_invalid_connection_latency", format(0x0000, '04x'))),
         TestFunc(lambda: pts.update_pixit_param(
