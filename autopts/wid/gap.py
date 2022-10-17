@@ -483,6 +483,12 @@ def hdl_wid_100(_: WIDParams):
     btp.gap_pair()
     return True
 
+#def hdl_wid_1003(_: WIDParams):
+#    """
+#    :params.desc: Please confirm the following number matches IUT: 
+#    """
+#    return True
+    
 
 def hdl_wid_104(_: WIDParams):
     btp.gap_set_bondable_off()
@@ -685,7 +691,6 @@ def hdl_wid_139_mode1_lvl2(_: WIDParams):
     attrs = btp.gatts_get_attrs(type_uuid='2803')
     bd_addr = btp.pts_addr_get()
     bd_addr_type = btp.pts_addr_type_get()
-
     for attr in attrs:
         if not attr:
             continue

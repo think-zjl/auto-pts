@@ -1,0 +1,18 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "./autoptsclient-zephyr.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["D:\\pts\\616\\Bouffalolab_zephyr.pqw6", "-i", "192.168.137.1", "-l", "192.168.137.5", "-t", "/dev/ttyUSB0", "-b", "bfl", "-c", "GAP/SEC/SEM/BV-22-C"]
+        }
+    ]
+}

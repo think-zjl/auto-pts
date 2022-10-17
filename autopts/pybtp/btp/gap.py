@@ -108,6 +108,8 @@ GAP = {
                    defs.GAP_SET_SC, CONTROLLER_INDEX, 0),
     "set_min_enc_key_size": (defs.BTP_SERVICE_ID_GAP,
                              defs.GAP_SET_MIN_ENC_KEY_SIZE, CONTROLLER_INDEX),
+    "set_addr_type": (defs.BTP_SERVICE_ID_GAP, defs.GAP_SET_ADDR_TYPE,
+                    CONTROLLER_INDEX),
 }
 
 
@@ -1139,6 +1141,13 @@ def gap_set_sc_off():
 
     tuple_data = gap_command_rsp_succ()
     __gap_current_settings_update(tuple_data)
+
+def gap_set_addr_type_evt(type):
+    logging.debug("%s", gap_set_addr_type_evt.__name__)
+    iutctl = get_iut()
+    iutctl.btp_socket.send(*GAP['set_addr_type'], data=chr(type))
+
+    gap_command_rsp_succ()
 
 
 def check_discov_results(addr_type=None, addr=None, discovered=True, eir=None):
