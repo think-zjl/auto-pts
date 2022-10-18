@@ -417,6 +417,11 @@ def test_cases(ptses):
                   cmds=pre_conditions +
                   [TestFunc(btp.gap_set_io_cap, IOCap.display_only)],
                   generic_wid_hdl=gap_wid_hdl),
+        # For GAP/PRIV/CONN/BV-12-C
+        ZTestCase("GAP", "GAP/PRIV/CONN/BV-12-C",
+                  #cmds=[TestFunc(btp.gap_set_addr_type_evt,3)] + pre_conditions,
+                  cmds=[TestFunc(btp.gap_unpair)] + [TestFunc(btp.gap_set_addr_type_evt,3)] + pre_conditions,
+                  generic_wid_hdl=gap_wid_hdl),
         ZTestCase("GAP", "GAP/PRIV/CONN/BI-01-C",
                   cmds=pre_conditions +
                   [TestFunc(btp.gap_set_io_cap, IOCap.display_only)],

@@ -401,9 +401,10 @@ def gap_adv_ind_on(ad=None, sd=None, duration=AdDuration.forever, own_addr_type=
 
     stack = get_stack()
 
-    if stack.gap.current_settings_get(
-            gap_settings_btp2txt[defs.GAP_SETTINGS_ADVERTISING]):
-        return
+    # For GAP/PRIV/CONN/BV-12-C
+    #if stack.gap.current_settings_get(
+    #        gap_settings_btp2txt[defs.GAP_SETTINGS_ADVERTISING]):
+    #    return
 
     iutctl = get_iut()
 
